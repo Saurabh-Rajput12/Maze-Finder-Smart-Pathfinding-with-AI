@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maze Pathfinder</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Header ──────────────────────────────────────────────── -->
+  <header>
+    <div class="logo">Maze<span>Finder:</span> Smart Pathfinding with AI</div>
+    <nav class="mode-tabs">
+      <button class="mode-tab active" data-mode="solver">Solver</button>
+      <button class="mode-tab" data-mode="compare">Compare</button>
+      <button class="mode-tab" data-mode="manual">Manual</button>
+      <button class="mode-tab" data-mode="adversarial">Adversarial</button>
+    </nav>
+    <div class="header-right">
+      <div class="stat-pill" title="Nodes visited"><span id="stat-nodes">0</span> nodes</div>
+      <div class="stat-pill" title="Path length"><span id="stat-path">0</span> steps</div>
+      <div class="stat-pill" title="Compute time"><span id="stat-time">0</span></div>
+    </div>
+  </header>
+
+  <!-- ── Left Sidebar ─────────────────────────────────────────── -->
+  <aside class="sidebar">
+
+    <!-- Maze generation -->
+    <section class="control-group">
+      <h3>Maze</h3>
+      <label>Type
+        <select id="select-maze">
+          <option value="recursive">Recursive Backtracking</option>
+          <option value="random">Random Walls</option>
+          <option value="spiral">Spiral</option>
+          <option value="rooms">Rooms &amp; Corridors</option>
+        </select>
+      </label>
+      <label>Difficulty
+        <select id="select-difficulty">
+          <option value="easy">Easy</option>
+          <option value="medium" selected>Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+      </label>
+      <div class="range-row">
+        <label>Rows <span id="label-rows">25</span></label>
+        <input type="range" id="range-rows" min="11" max="41" step="2" value="25">
+      </div>
+      <div class="range-row">
+        <label>Cols <span id="label-cols">35</span></label>
+        <input type="range" id="range-cols" min="15" max="61" step="2" value="35">
+      </div>
+      <button class="btn btn-secondary" id="btn-generate">Generate New Maze</button>
+    </section>
+
+    <!-- Solver panel -->
+    <section class="control-group" id="panel-solver">
+      <h3>Algorithm</h3>
+      <label>Algorithm
+        <select id="select-algo">
+          <option value="bfs">BFS — Breadth-First Search</option>
+          <option value="dfs">DFS — Depth-First Search</option>
+          <option value="astar">A* — A-Star</option>
+          <option value="greedy">Greedy Best-First</option>
+          <option value="hill">Hill Climbing</option>
+        </select>
+      </label>
+      <div class="range-row">
+        <label>Speed <span id="label-speed">50</span></label>
+        <input type="range" id="range-speed" min="1" max="100" value="50">
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btn-run">▶ Run</button>
+        <button class="btn btn-danger"  id="btn-stop">■ Stop</button>
+      </div>
+      <button class="btn btn-secondary" id="btn-reset">Reset</button>
+    </section>
+
+    <!-- Compare panel -->
+    <section class="control-group hidden" id="panel-compare">
+      <h3>Compare Algorithms</h3>
+      <label>Algorithm A
+        <select id="select-algo-a">
+          <option value="bfs" selected>BFS</option>
+          <option value="dfs">DFS</option>
+          <option value="astar">A*</option>
+          <option value="greedy">Greedy</option>
+          <option value="hill">Hill Climbing</option>
+        </select>
+      </label>
+      <label>Algorithm B
+        <select id="select-algo-b">
+          <option value="bfs">BFS</option>
+          <option value="dfs">DFS</option>
+          <option value="astar" selected>A*</option>
+          <option value="greedy">Greedy</option>
+          <option value="hill">Hill Climbing</option>
+        </select>
+      </label>
+      <div class="range-row">
+        <label>Speed <span id="label-speed-cmp">50</span></label>
+        <input type="range" id="range-speed-cmp" min="1" max="100" value="50">
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btn-run-cmp">▶ Compare</button>
+        <button class="btn btn-stop-cmp btn-danger">■ Stop</button>
+      </div>
+    </section>
+
+    <!-- Manual / Adversarial panel -->
+    <section class="control-group hidden" id="panel-manual">
+      <h3>Controls</h3>
+      <div class="key-legend">
+        <div class="key-row">
+          <kbd>W</kbd> / <kbd>↑</kbd> Move up
+        </div>
+        <div class="key-row">
+          <kbd>S</kbd> / <kbd>↓</kbd> Move down
+        </div>
+        <div class="key-row">
+          <kbd>A</kbd> / <kbd>←</kbd> Move left
+        </div>
+        <div class="key-row">
+          <kbd>D</kbd> / <kbd>→</kbd> Move right
+        </div>
+      </div>
+      <button class="btn btn-ghost" id="btn-hint">💡 Hint</button>
+      <button class="btn btn-secondary" id="btn-reset">Reset</button>
+    </section>
+
+    <!-- Status -->
+    <div class="status-bar">
+      <span id="status-msg"></span>
+    </div>
+
+  </aside>
+
+  <!-- ── Main Canvas Area ─────────────────────────────────────── -->
+  <main id="canvas-wrapper">
+
+    <!-- Single-canvas (solver / manual / adversarial) -->
+    <canvas id="maze-canvas"></canvas>
+
+    <!-- Dual-canvas for compare mode -->
+    <div id="compare-canvases" class="hidden">
+      <div class="compare-pane">
+        <div class="compare-label" id="label-algo-a">Algorithm A</div>
+        <canvas id="maze-canvas-a"></canvas>
+      </div>
+      <div class="compare-pane">
+        <div class="compare-label" id="label-algo-b">Algorithm B</div>
+        <canvas id="maze-canvas-b"></canvas>
+      </div>
+    </div>
+
+    <!-- Win/Lose overlay -->
+    <div id="overlay-msg" class="overlay hidden">
+      <div class="overlay-card">
+        <div class="overlay-title" id="overlay-title"></div>
+        <div class="overlay-body"  id="overlay-body"></div>
+        <button class="btn btn-primary" id="overlay-close">Continue</button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── Right Sidebar (Compare Results) ──────────────────────── -->
+  <aside class="sidebar-right">
+    <div id="compare-results" class="hidden">
+      <h3>Results</h3>
+      <div class="cmp-card" id="cmp-a">
+        <div class="cmp-algo" id="cmp-a-algo">—</div>
+        <div class="cmp-row"><span>Nodes visited</span><strong id="cmp-a-nodes">—</strong></div>
+        <div class="cmp-row"><span>Path length</span><strong id="cmp-a-path">—</strong></div>
+        <div class="cmp-row"><span>Time</span><strong id="cmp-a-time">—</strong></div>
+      </div>
+      <div class="cmp-vs">VS</div>
+      <div class="cmp-card" id="cmp-b">
+        <div class="cmp-algo" id="cmp-b-algo">—</div>
+        <div class="cmp-row"><span>Nodes visited</span><strong id="cmp-b-nodes">—</strong></div>
+        <div class="cmp-row"><span>Path length</span><strong id="cmp-b-path">—</strong></div>
+        <div class="cmp-row"><span>Time</span><strong id="cmp-b-time">—</strong></div>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+      <h3>Legend</h3>
+      <div class="legend-item"><span class="swatch" style="background:#34c77b"></span>Start</div>
+      <div class="legend-item"><span class="swatch" style="background:#e05263"></span>End</div>
+      <div class="legend-item"><span class="swatch" style="background:#2563a8"></span>Visited</div>
+      <div class="legend-item"><span class="swatch" style="background:#e8b830"></span>Path</div>
+      <div class="legend-item"><span class="swatch" style="background:#9b72e0"></span>Player</div>
+      <div class="legend-item"><span class="swatch" style="background:#e0703a"></span>Enemy</div>
+      <div class="legend-item"><span class="swatch" style="background:#2a3348"></span>Wall</div>
+    </div>
+  </aside>
+
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
